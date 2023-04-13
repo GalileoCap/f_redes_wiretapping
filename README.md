@@ -1,9 +1,11 @@
 # Redes: TP1 Wiretapping
 
 ## Analysis
-Correr haciendo (se necesita `python3` y `pipenv`):
+Se necesita `python3` y `pipenv`
+
+### Sniff
 ```
 cd analysis
 pipenv install
-pipenv shell sudo python main.py
+pipenv run sudo python sniff.py
 ```
