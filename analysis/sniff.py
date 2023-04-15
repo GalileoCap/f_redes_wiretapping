@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from scapy.all import *
 
+import numpy as np
 from datetime import datetime
 from time import time
 import sys
@@ -10,28 +11,40 @@ OUT_DIR = './out'
 prev_len = 0
 count = 0
 
+def entropia(simbolos):
+  return sum([p * i for _, p, i in simbolos])
+
+def formatear_simbolos(simbolos):
+  return '\n'.join([f'{d}, {p}, {i}' for d, p, i in simbolos])
+
 def formatear_fuente(S, start_time):
+  dt = time() - start_time
+
   N = sum(S.values())
-  simbolos = sorted(S.items(), key=lambda x: -x[1])
+  simbolos = [
+    (d, k/N, -np.log2(k/N))
+    for d, k in sorted(S.items(), key=lambda x: -x[1])
+  ]
+  H = entropia(simbolos)
+
   return (
-    "\n".join([ "%s : %.5f" % (d,k/N) for d,k in simbolos ]),
-    time() - start_time,
-    len(simbolos)
+    f'{dt}\n{count}\n{H}\n{formatear_simbolos(simbolos)}\n',
+    len(simbolos) + 4
   )
 
 def mostrar_fuente(S, start_time):
   global prev_len
-  fuentes, dt, largo = formatear_fuente(S, start_time)
 
+  s, largo = formatear_fuente(S, start_time)
   sys.stdout.write('\033[F' * prev_len)
-  print(f'{dt}\n{count}\n{fuentes}\n')
+  print(s)
 
-  prev_len = largo + 3
+  prev_len = largo
 
 def guardar_fuente(S, start_date, start_time):
   with open(os.path.join(OUT_DIR, start_date), 'w') as fout:
-    fuentes, dt, _ = formatear_fuente(S, start_time)
-    fout.write(f'{start_date}\n{dt}\n{count}\n{fuentes}\n')
+    s, _ = formatear_fuente(S, start_time)
+    fout.write(s)
 
 def callback(pkt, S, start_time):
   global count
