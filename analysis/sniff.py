@@ -8,6 +8,7 @@ import os
 
 OUT_DIR = './out'
 prev_len = 0
+count = 0
 
 def formatear_fuente(S, start_time):
   N = sum(S.values())
@@ -23,17 +24,21 @@ def mostrar_fuente(S, start_time):
   fuentes, dt, largo = formatear_fuente(S, start_time)
 
   sys.stdout.write('\033[F' * prev_len)
-  print(f'{dt}\n{fuentes}\n')
+  print(f'{dt}\n{count}\n{fuentes}\n')
 
-  prev_len = largo + 2
+  prev_len = largo + 3
 
 def guardar_fuente(S, start_date, start_time):
   with open(os.path.join(OUT_DIR, start_date), 'w') as fout:
     fuentes, dt, _ = formatear_fuente(S, start_time)
-    fout.write(f'{start_date}\n{dt}\n{fuentes}\n')
+    fout.write(f'{start_date}\n{dt}\n{count}\n{fuentes}\n')
 
 def callback(pkt, S, start_time):
+  global count
+
   if pkt.haslayer(Ether):
+    count += 1
+
     dire = "BROADCAST" if pkt[Ether].dst=="ff:ff:ff:ff:ff:ff" else "UNICAST"
     proto = pkt[Ether].type # El campo type del frame tiene el protocolo
     s_i = (dire, proto) # Aca se define el simbolo de la fuente
@@ -45,7 +50,7 @@ def callback(pkt, S, start_time):
   mostrar_fuente(S, start_time)
 
 def sniffAndSave():
-  os.mkdir(OUT_DIR)
+  os.makedirs(OUT_DIR, exist_ok = True)
 
   S = {}
   start_date = datetime.now().strftime('%Y-%m-%d-%a_%H:%M:%S')
