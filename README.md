@@ -7,5 +7,5 @@ Se necesita `python3` y `pipenv`
 ```
 cd analysis
 pipenv install
-pipenv run sudo python sniff.py
+pipenv run sudo python sniff.py {user} {experiment_name}
 ```
