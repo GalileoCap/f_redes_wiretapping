@@ -32,6 +32,14 @@ def sniffPkts(count = 10):
   )
   return pd.DataFrame(res)
 
+def getSymbolsDf(pkts):
+  symbols = '(' + pkts['dire'] + ', ' + pkts['proto'].astype(str) + ')'
+  counts = symbols.value_counts(normalize = True)
+  return pd.DataFrame([
+    {'symbol': symbol, 'p': counts[symbol]}
+    for symbol in list(symbols.unique())
+  ])
+
 def experiment(user, name):
   pkts = pd.DataFrame()
   fpath = f'{OUTDIR}/{user}_{name}.csv.tar.gz'
@@ -40,6 +48,11 @@ def experiment(user, name):
   except:
     pkts = sniffPkts(10000)
     savePkts(pkts, fpath)
+
+  symbols = getSymbolsDf(pkts)
+  symbols['information'] = -np.log2(symbols['p'])
+  H = (symbols['p'] * symbols['information']).sum()
+  print(symbols, f'Entropy: {H}', sep = '\n')
 
 if __name__ == '__main__':
   if len(sys.argv) != 3:
