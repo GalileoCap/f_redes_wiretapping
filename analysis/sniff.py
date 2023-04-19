@@ -7,27 +7,18 @@ import numpy as np
 from datetime import datetime
 from time import time
 import sys
-import os
 
-OUTDIR = './out'
+from analyze import processPkt, analyzePkts
+from utils import getOPath, savePkts
+
 totalPkts = 0
-
-def savePkts(pkts, fpath):
-  print('[savePkts]')
-  os.makedirs(OUTDIR, exist_ok = True)
-  pkts.to_csv(fpath)
-
-def callback(pkt, *, start_time):
+def callback(pkt, start_time):
   global totalPkts
   totalPkts += 1
   if (totalPkts % 10) == 0:
     print(f'\r{totalPkts=}', end = '')
 
-  return {
-    'dire': 'BROADCAST' if pkt[Ether].dst == 'ff:ff:ff:ff:ff:ff' else 'UNICAST',
-    'proto': pkt[Ether].type, # El campo type del frame tiene el protocolo
-    'dt': time() - start_time,
-  }
+  return processPkt(pkt, start_time = start_time)
 
 def sniffPkts():
   print(f'[sniffPkts] now={datetime.now()}')
@@ -36,32 +27,21 @@ def sniffPkts():
   res = []
   sniff(
     lfilter = lambda pkt: pkt.haslayer(Ether),
-    prn = lambda pkt: res.append(callback(pkt, start_time = start_time))
+    prn = lambda pkt: res.append(callback(pkt, start_time))
   )
   print()
   return pd.DataFrame(res)
 
-def getSymbolsDf(pkts):
-  symbols = '(' + pkts['dire'] + ', ' + pkts['proto'].astype(str) + ')'
-  counts = symbols.value_counts(normalize = True)
-  return pd.DataFrame([
-    {'symbol': symbol, 'p': counts[symbol]}
-    for symbol in list(symbols.unique())
-  ])
-
 def experiment(user, name):
   pkts = pd.DataFrame()
-  fpath = f'{OUTDIR}/{user}_{name}.csv.tar.gz'
+  fpath = getOPath(user, name)
   try:
     pkts = pd.read_csv(fpath)
   except:
     pkts = sniffPkts()
     savePkts(pkts, fpath)
 
-  symbols = getSymbolsDf(pkts)
-  symbols['information'] = -np.log2(symbols['p'])
-  H = (symbols['p'] * symbols['information']).sum()
-  print(symbols, f'Tramas: {len(pkts)}', f'Entropy: {H}', sep = '\n')
+  analyzePkts(pkts)
 
 if __name__ == '__main__':
   if len(sys.argv) != 3:
