@@ -10,6 +10,7 @@ import sys
 import os
 
 OUTDIR = './out'
+totalPkts = 0
 
 def savePkts(pkts, fpath):
   print('[savePkts]')
@@ -17,6 +18,11 @@ def savePkts(pkts, fpath):
   pkts.to_csv(fpath)
 
 def callback(pkt, *, start_time):
+  global totalPkts
+  totalPkts += 1
+  if (totalPkts % 10) == 0:
+    print(f'\r{totalPkts=}', end = '')
+
   return {
     'dire': 'BROADCAST' if pkt[Ether].dst == 'ff:ff:ff:ff:ff:ff' else 'UNICAST',
     'proto': pkt[Ether].type, # El campo type del frame tiene el protocolo
@@ -32,6 +38,7 @@ def sniffPkts():
     lfilter = lambda pkt: pkt.haslayer(Ether),
     prn = lambda pkt: res.append(callback(pkt, start_time = start_time))
   )
+  print()
   return pd.DataFrame(res)
 
 def getSymbolsDf(pkts):
