@@ -54,7 +54,7 @@ def experiment(user, name):
   symbols = getSymbolsDf(pkts)
   symbols['information'] = -np.log2(symbols['p'])
   H = (symbols['p'] * symbols['information']).sum()
-  print(symbols, f'Entropy: {H}', sep = '\n')
+  print(symbols, f'Tramas: {len(pkts)}', f'Entropy: {H}', sep = '\n')
 
 if __name__ == '__main__':
   if len(sys.argv) != 3:
