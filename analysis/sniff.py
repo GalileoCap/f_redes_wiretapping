@@ -4,6 +4,7 @@ from scapy.all import *
 import pandas as pd
 import numpy as np
 
+from datetime import datetime
 from time import time
 import sys
 import os
@@ -11,6 +12,7 @@ import os
 OUTDIR = './out'
 
 def savePkts(pkts, fpath):
+  print('[savePkts]')
   os.makedirs(OUTDIR, exist_ok = True)
   pkts.to_csv(fpath)
 
@@ -21,12 +23,12 @@ def callback(pkt, *, start_time):
     'dt': time() - start_time,
   }
 
-def sniffPkts(count = 10):
+def sniffPkts():
+  print(f'[sniffPkts] now={datetime.now()}')
   start_time = time()
 
   res = []
   sniff(
-    count,
     lfilter = lambda pkt: pkt.haslayer(Ether),
     prn = lambda pkt: res.append(callback(pkt, start_time = start_time))
   )
@@ -46,7 +48,7 @@ def experiment(user, name):
   try:
     pkts = pd.read_csv(fpath)
   except:
-    pkts = sniffPkts(10000)
+    pkts = sniffPkts()
     savePkts(pkts, fpath)
 
   symbols = getSymbolsDf(pkts)
