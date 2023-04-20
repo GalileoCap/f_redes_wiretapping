@@ -14,4 +14,4 @@ if __name__ == '__main__':
   args.force = args.force != False # To True if not False
 
   experiment = Experiment(*args.experiment)
-  experiment.loadPcap().process(save = args.force, load = not args.force).report()
+  experiment.process(load = not args.force).report()

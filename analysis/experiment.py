@@ -18,13 +18,16 @@ class Experiment:
   #************************************************************
   #* Sniff ****************************************************
 
-  def sniff(self):
+  def sniff(self, *, save = True):
     print(f'[{self.fbase}.sniff]: now={datetime.now()}\nPress Ctrl+C to stop')
     self.totalPkts = 0
     self.pcap = scapy.sniff(
       lfilter = lambda pkt: pkt.haslayer(scapy.Ether),
       prn = self.sniffCallback,
     )
+
+    if save:
+      self.savePcap()
     return self
 
   def sniffCallback(self, pkt):
@@ -49,6 +52,8 @@ class Experiment:
       self.pcapDf = pd.read_csv(fpath, index_col = 0)
       return
 
+    if not hasattr(self, 'pcap') or self.pcap is None:
+      self.loadPcap()
     start_time = self.pcap[0].time
     self.pcapDf = pd.DataFrame([
       self.processPkt(pkt, start_time = start_time)

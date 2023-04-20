@@ -12,4 +12,4 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   experiment = Experiment(*args.experiment)
-  experiment.sniff().savePcap().process(load = False).report()
+  experiment.sniff().process(load = False).report()
