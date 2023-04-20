@@ -56,20 +56,17 @@ class Experiment:
       self.loadPcap()
     start_time = self.pcap[0].time
     self.pcapDf = pd.DataFrame([
-      self.processPkt(pkt, start_time = start_time)
+			{
+				'dire': 'BROADCAST' if pkt[scapy.Ether].dst == 'ff:ff:ff:ff:ff:ff' else 'UNICAST',
+				'proto': utils.getTypeStr(pkt[scapy.Ether].type), # El campo type del frame tiene el protocolo
+				'dt': pkt.time - start_time,
+			}
       for pkt in self.pcap
     ])
 
     if save:
       self.pcapDf.to_csv(fpath)
     return self
-    
-  def processPkt(self, pkt, *, start_time):
-    return {
-      'dire': 'BROADCAST' if pkt[scapy.Ether].dst == 'ff:ff:ff:ff:ff:ff' else 'UNICAST',
-      'proto': pkt[scapy.Ether].type, # El campo type del frame tiene el protocolo #TODO: To string
-      'dt': pkt.time - start_time,
-    }
    
   def getSymbolsDf(self, save = True, load = True):
     #TODO: Repeated code with getPcapDf
@@ -78,7 +75,7 @@ class Experiment:
       self.symbolsDf = pd.read_csv(fpath, index_col = 0)
       return
 
-    symbols = '(' + self.pcapDf['dire'] + ', ' + self.pcapDf['proto'].astype(str) + ')'
+    symbols = '(' + self.pcapDf['dire'] + ', ' + self.pcapDf['proto'] + ')'
     counts = symbols.value_counts()
     self.symbolsDf = pd.DataFrame([
       {
@@ -102,6 +99,7 @@ class Experiment:
 
     H = (self.symbolsDf['p'] * self.symbolsDf['information']).sum()
     print(self.symbolsDf, f'Tramas: {self.symbolsDf["count"].sum()}', f'Entropy: {H}', sep = '\n')
+		#TODO: Graphs
 
     return self
   
