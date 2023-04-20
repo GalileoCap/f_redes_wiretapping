@@ -6,36 +6,39 @@ import os
 
 OUTDIR = './out'
 INDIR = './data'
+os.makedirs(OUTDIR, exist_ok = True)
+os.makedirs(INDIR, exist_ok = True)
 
-def getExperimentName(user, experiment):
+def experimentName(user, experiment):
   return f'{user}_{experiment}'
 
-def dfPath(user, experiment):
-  return os.path.join(OUTDIR, getExperimentName(user, experiment) + '.csv.tar.gz')
-def pcapPath(user, experiment):
-  return os.path.join(INDIR, getExperimentName(user, experiment) + '.pcap')
+def experimentPath(fbase):
+  return os.path.join(OUTDIR, fbase)
+def dfPath(fbase, name):
+  return os.path.join(experimentPath(fbase), f'{name}.csv.tar.gz')
+def pcapPath(fbase):
+  return os.path.join(INDIR, f'{fbase}.pcap')
 
-def savePcap(pkts, user, experiment):
-  fpath = pcapPath(user, experiment)
-
-  print(f'[savePcap] {fpath=}')
-  os.makedirs(INDIR, exist_ok = True)
-  wrpcap(fpath, pkts)
-
-def saveDf(df, user, experiment):
-  fpath = dfPath(user, experiment)
+def saveDf(df, fpath):
+  fpath = dfPath(fpath)
 
   print(f'[saveDf] {fpath=}')
   os.makedirs(OUTDIR, exist_ok = True)
   df.to_csv(fpath)
 
-def readPcap(user, experiment):
-  fpath = pcapPath(user, experiment)
+def loadPcap(fpath):
+  fpath = pcapPath(fpath)
+
+  print(f'[loadPcap] {fpath=}')
   return rdpcap(fpath)
 
-def readDf(user, experiment):
-  fpath = dfPath(user, experiment)
+def loadDf(fpath):
+  fpath = dfPath(fpath)
+
+  print(f'[loadDf] {fpath=}')
   return pd.read_csv(fpath, index_col = 0)
 
-def dfExists(user, experiment):
-  return os.path.isfile(dfPath(user, experiment))
+def dfExists(fbase, name):
+  return os.path.isfile(dfPath(fbase, name))
+def pcapExists(fbase):
+  return os.path.isfile(pcapPath(fbase))
