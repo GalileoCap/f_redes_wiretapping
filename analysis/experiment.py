@@ -145,30 +145,16 @@ class Experiment:
     self.reportInformation()
 
   def reportPct(self):
-    fig = px.bar(
-      self.symbolsDf.sort_values('p', ascending = False),
-      x = 'symbol',
-      y = 'p',
+    self.plotBar(
+      self.symbolsDf, 'symbol', 'p',
+      name = 'pct', title = 'pct', xaxis_title = 'Symbol', yaxis_title = '% of total packets',
     )
-    fig.update_layout(
-      # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
-      xaxis_title = 'Symbol',
-      yaxis_title = '% of total packets',
-    )
-    utils.saveFig(fig, self.fbase, 'pct')
 
   def reportInformation(self):
-    fig = px.bar(
-      self.symbolsDf.sort_values('information', ascending = False),
-      x = 'symbol',
-      y = 'information',
+    self.plotBar(
+      self.symbolsDf, 'symbol', 'information',
+      name = 'info', title = 'Information', xaxis_title = 'Symbol', yaxis_title = 'Information',
     )
-    fig.update_layout(
-      # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
-      xaxis_title = 'Symbol',
-      yaxis_title = 'Information',
-    )
-    utils.saveFig(fig, self.fbase, 'info')
 
   def reportCounts(self):
     self.getFooDf()
@@ -205,6 +191,19 @@ class Experiment:
       yaxis_title = 'Information',
     )
     utils.saveFig(fig, self.fbase, 'hitime')
+
+  #************************************************************
+  #* Plot *****************************************************
+
+  def plotBar(self, df, x, y, *, title, xaxis_title, yaxis_title, name, ascending = False):
+    fig = px.bar(
+      df.sort_values(y, ascending = ascending),
+      x = x, y = y,
+    )
+    fig.update_layout(
+      title = title, xaxis_title = xaxis_title, yaxis_title = yaxis_title, 
+    )
+    utils.saveFig(fig, self.fbase, name)
   
   #************************************************************
   #* Utils ****************************************************
