@@ -20,6 +20,8 @@ def pcapPath(fbase):
   return os.path.join(INDIR, f'{fbase}.pcap')
 def imgPath(fbase, name):
   return os.path.join(experimentPath(fbase), f'{name}.png')
+def htmlPath(fbase, name):
+  return os.path.join(experimentPath(fbase), f'{name}.html')
 
 def saveDf(df, fpath):
   fpath = dfPath(fpath)
@@ -39,6 +41,10 @@ def loadDf(fpath):
 
   print(f'[loadDf] {fpath=}')
   return pd.read_csv(fpath, index_col = 0)
+
+def saveFig(fig, fbase, name):
+  fig.write_html(htmlPath(fbase, name))
+  fig.write_image(imgPath(fbase, name))
 
 def dfExists(fbase, name):
   return os.path.isfile(dfPath(fbase, name))

@@ -125,7 +125,7 @@ class Experiment:
       xaxis_title = 'Symbol',
       yaxis_title = '% of total packets',
     )
-    fig.write_image(utils.imgPath(self.fbase, 'pct'))
+    utils.saveFig(fig, self.fbase, 'pct')
 
   def reportInformation(self):
     fig = px.bar(
@@ -138,7 +138,7 @@ class Experiment:
       xaxis_title = 'Symbol',
       yaxis_title = 'Information',
     )
-    fig.write_image(utils.imgPath(self.fbase, 'information'))
+    utils.saveFig(fig, self.fbase, 'info')
 
   def reportCounts(self):
     df = self.pcapDf.apply(
@@ -164,7 +164,7 @@ class Experiment:
       xaxis_title = 'Time', # TODO: Not time
       yaxis_title = 'Count of packets',
     )
-    fig.write_image(utils.imgPath(self.fbase, 'counts'))
+    utils.saveFig(fig, self.fbase, 'counts')
 
   def reportHITime(self):
     # H and I (per type), over time
@@ -203,7 +203,7 @@ class Experiment:
       xaxis_title = 'Time', # TODO: Not time
       yaxis_title = 'Information',
     )
-    fig.write_image(utils.imgPath(self.fbase, 'hitime'))
+    utils.saveFig(fig, self.fbase, 'hitime')
   
   #************************************************************
   #* Utils ****************************************************
