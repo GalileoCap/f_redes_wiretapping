@@ -8,6 +8,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 from datetime import datetime
+from time import time
 import sys
 import os
 
@@ -112,27 +113,24 @@ class Experiment:
 
   def reportHITime(self):
     # H and I (per type), over time
-    # TODO: Optimize
-    symbols = {symbol: {'count': 0, 'p': 0, 'I': 0} for symbol in self.symbolsDf['symbol']}
-    H = []
-    def foo(row):
-      symbolState = symbols[row['symbol']]
-      symbolState['count'] += 1
-      symbolState['p'] = symbolState['count'] / sum([state['count'] for _, state in symbols.items()])
-      symbolState['I'] = -np.log2(symbolState['p'])
+    df = self.pcapDf.apply(
+      lambda row: pd.Series({
+        symbol: int(symbol == row['symbol'])
+        for symbol in self.symbolsDf['symbol']
+      }),
+      axis = 'columns'
+    )
+    df['total_count'] = df.index + 1
+    for symbol in self.symbolsDf['symbol']:
+      df[f'{symbol}_count'] = df[symbol].cumsum()
+      df[f'{symbol}_p'] = df[f'{symbol}_count'] / df['total_count']
+      np.seterr(divide = 'ignore') # SEE: https://stackoverflow.com/a/53357052
+      df[f'{symbol}_I'] = -np.log2(df[f'{symbol}_p'])
+      np.seterr(divide = 'warn')
+      df[f'{symbol}_H'] = df[f'{symbol}_p'] * df[f'{symbol}_I']
+    df.replace([np.inf, -np.inf], 0, inplace = True)
+    df['H'] = df[[f'{symbol}_H' for symbol in self.symbolsDf['symbol']]].sum(axis = 'columns')
 
-      H.append(sum([
-        state['p'] * state['I']
-        for _, state in symbols.items()
-      ]))
-      res = {}
-      for symbol, state in symbols.items():
-        res[f'{symbol}_count'] = state['count']
-        res[f'{symbol}_p'] = state['p']
-        res[f'{symbol}_I'] = state['I']
-      return pd.Series(res)
-
-    df = self.pcapDf.apply(foo, axis = 'columns')
     fig = go.Figure()
     for symbol in self.symbolsDf['symbol']:
       fig.add_trace(go.Scatter(
@@ -142,7 +140,7 @@ class Experiment:
       ))
     fig.add_trace(go.Scatter(
       # x = ,
-      y = H,
+      y = df['H'],
       name = 'H',
     ))
     fig.update_layout(
