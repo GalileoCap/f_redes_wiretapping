@@ -16,5 +16,5 @@ Si ya se tiene un .pcap, lo analiza y guarda los datos en `./analysis/out/{user}
 ```
 cd analysis
 pipenv install
-pipenv run python analyze.py {user} {experiment_name} # Pasar --force=True para reemplazar los datos previamente guardados
+pipenv run python analyze.py {user} {experiment_name} # Pasar --force=True para reemplazar los datos previamente guardados # Pasar --all=True para correr sobre todos los .pcap
 ```
