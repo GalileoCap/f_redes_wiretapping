@@ -96,6 +96,36 @@ class Experiment:
       self.symbolsDf.to_csv(fpath)
     return self
 
+  def getFooDf(self, save = True, load = True):
+    if hasattr(self, 'fooDf') and not self.fooDf is None:
+      return
+
+    fpath = utils.dfPath(self.fbase, 'foo')
+    if load and os.path.isfile(fpath):
+      self.fooDf = pd.read_csv(fpath, index_col = 0)
+      return
+
+    df = self.pcapDf.apply(
+      lambda row: pd.Series({
+        symbol: int(symbol == row['symbol'])
+        for symbol in self.symbolsDf['symbol']
+      }),
+      axis = 'columns'
+    )
+    for symbol in self.symbolsDf['symbol']:
+      df[f'{symbol}_count'] = df[symbol].cumsum()
+      df[f'{symbol}_p'] = df[f'{symbol}_count'] / (df.index + 1)
+      np.seterr(divide = 'ignore') # SEE: https://stackoverflow.com/a/53357052
+      df[f'{symbol}_I'] = -np.log2(df[f'{symbol}_p'])
+      np.seterr(divide = 'warn')
+      df[f'{symbol}_H'] = df[f'{symbol}_p'] * df[f'{symbol}_I']
+    df.replace([np.inf, -np.inf], 0, inplace = True)
+    df['H'] = df[[f'{symbol}_H' for symbol in self.symbolsDf['symbol']]].sum(axis = 'columns')
+
+    self.fooDf = df
+    if save:
+      self.fooDf.to_csv(fpath)
+
   #************************************************************
   #* Report ***************************************************
 
@@ -141,22 +171,11 @@ class Experiment:
     utils.saveFig(fig, self.fbase, 'info')
 
   def reportCounts(self):
-    df = self.pcapDf.apply(
-      lambda row: pd.Series({
-        symbol: int(symbol == row['symbol'])
-        for symbol in self.symbolsDf['symbol']
-      }),
-      axis = 'columns'
-    )
-    df['total_count'] = df.index + 1
-    for symbol in self.symbolsDf['symbol']:
-      df[f'{symbol}_count'] = df[symbol].cumsum()
-      df[f'{symbol}_p'] = df[f'{symbol}_count'] / df['total_count']
+    self.getFooDf()
     fig = go.Figure()
     for symbol in self.symbolsDf['symbol']:
       fig.add_trace(go.Scatter(
-        # x = ,
-        y = df[f'{symbol}_count'],
+        y = self.fooDf[f'{symbol}_count'],
         name = symbol,
       ))
     fig.update_layout(
@@ -168,34 +187,16 @@ class Experiment:
 
   def reportHITime(self):
     # H and I (per type), over time
-    df = self.pcapDf.apply(
-      lambda row: pd.Series({
-        symbol: int(symbol == row['symbol'])
-        for symbol in self.symbolsDf['symbol']
-      }),
-      axis = 'columns'
-    )
-    df['total_count'] = df.index + 1
-    for symbol in self.symbolsDf['symbol']:
-      df[f'{symbol}_count'] = df[symbol].cumsum()
-      df[f'{symbol}_p'] = df[f'{symbol}_count'] / df['total_count']
-      np.seterr(divide = 'ignore') # SEE: https://stackoverflow.com/a/53357052
-      df[f'{symbol}_I'] = -np.log2(df[f'{symbol}_p'])
-      np.seterr(divide = 'warn')
-      df[f'{symbol}_H'] = df[f'{symbol}_p'] * df[f'{symbol}_I']
-    df.replace([np.inf, -np.inf], 0, inplace = True)
-    df['H'] = df[[f'{symbol}_H' for symbol in self.symbolsDf['symbol']]].sum(axis = 'columns')
+    self.getFooDf()
 
     fig = go.Figure()
     for symbol in self.symbolsDf['symbol']:
       fig.add_trace(go.Scatter(
-        # x = ,
-        y = df[f'{symbol}_I'],
+        y = self.fooDf[f'{symbol}_I'],
         name = symbol,
       ))
     fig.add_trace(go.Scatter(
-      # x = ,
-      y = df['H'],
+      y = self.fooDf['H'],
       name = 'H',
     ))
     fig.update_layout(
