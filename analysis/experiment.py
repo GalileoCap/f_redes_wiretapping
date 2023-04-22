@@ -48,6 +48,7 @@ class Experiment:
   
     self.getPcapDf(save, load)
     self.getSymbolsDf(save, load)
+    self.getOptDf(save, load)
 
     return self
 
@@ -57,8 +58,7 @@ class Experiment:
       self.pcapDf = pd.read_csv(fpath, index_col = 0)
       return
 
-    if not hasattr(self, 'pcap') or self.pcap is None:
-      self.loadPcap()
+    self.loadPcap()
     start_time = self.pcap[0].time
     self.pcapDf = pd.DataFrame([
 			{
@@ -95,6 +95,31 @@ class Experiment:
     if save:
       self.symbolsDf.to_csv(fpath)
     return self
+
+  def getOptDf(self, save = True, load = True):
+    #TODO: Repeated code with getPcapDf
+    fpath = utils.dfPath(self.fbase, 'opt')
+    if load and os.path.isfile(fpath):
+      self.optDf = pd.read_csv(fpath, index_col = 0)
+      return
+  
+    self.loadPcap()
+    self.optDf = pd.DataFrame([
+      {
+        'ptype': pkt[scapy.ARP].ptype,
+        'psrc': pkt[scapy.ARP].psrc,
+        'pdst': pkt[scapy.ARP].pdst,
+        'hwtype': pkt[scapy.ARP].hwtype,
+        'hwsrc': pkt[scapy.ARP].hwsrc,
+        'hwdst': pkt[scapy.ARP].hwdst,
+        'op': "whois" if pkt[scapy.ARP].op == 1 else "reply",
+      }
+      for pkt in self.pcap
+      if pkt[scapy.Ether].type == 0x0806 # Is ARP
+    ])
+    
+    if save:
+      self.optDf.to_csv(fpath)
 
   def getFooDf(self, save = True, load = True):
     if hasattr(self, 'fooDf') and not self.fooDf is None:
@@ -135,6 +160,7 @@ class Experiment:
     self.reportOverall()
     self.reportCounts()
     self.reportHITime()
+    self.reportOpt()
 
     return self
 
@@ -192,6 +218,60 @@ class Experiment:
     )
     utils.saveFig(fig, self.fbase, 'hitime')
 
+  def reportOpt(self):
+    # print(self.optDf.tail())
+    # print()
+    # print(self.optDf['psrc'].value_counts())
+    # print()
+    # print(self.optDf['pdst'].value_counts())
+    # print()
+    # print(self.optDf['op'].value_counts()
+    # print()
+    _counts = self.optDf['pdst'].value_counts() + self.optDf['psrc'].value_counts()
+    _counts.dropna(inplace = True)
+    _df = pd.DataFrame()
+    _df['count'] = _counts
+    _df['symbol'] = _counts.index
+    _df['p'] = _counts / _counts.sum()
+    _df['information'] = -np.log2(_df['p'])
+    print(_df)
+    print()
+
+    self.plotBar(
+      _df, 'symbol', 'p',
+      name = f'opt_pct_F', title = f'opt_pct_F', xaxis_title = 'Symbol', yaxis_title = '% of total packets',
+    )
+    self.plotBar(
+      _df, 'symbol', 'information',
+      name = f'opt_info_F', title = f'opt_info_F', xaxis_title = 'Symbol', yaxis_title = 'Information',
+    )
+
+    self.optDf['symbol_src'] = '(' + self.optDf['psrc'] + ', ' + self.optDf['op'] + ')'
+    self.optDf['symbol_dst'] = '(' + self.optDf['pdst'] + ', ' + self.optDf['op'] + ')'
+
+    allCounts = {
+      'src': self.optDf['symbol_src'].value_counts(),
+      'dst': self.optDf['symbol_dst'].value_counts(),
+    }
+    for v, counts in allCounts.items():
+      df = pd.DataFrame([
+        {
+          'symbol': symbol, 
+          'count': counts[symbol]
+        }
+        for symbol in list(self.optDf[f'symbol_{v}'].unique())
+      ])
+      df['p'] = df['count'] / len(self.optDf)
+      df['information'] = -np.log2(df['p'])
+      self.plotBar(
+        df, 'symbol', 'p',
+        name = f'opt_pct_{v}', title = f'opt_pct_{v}', xaxis_title = 'Symbol', yaxis_title = '% of total packets',
+      )
+      self.plotBar(
+        df, 'symbol', 'information',
+        name = f'opt_info_{v}', title = f'opt_info_{v}', xaxis_title = 'Symbol', yaxis_title = 'Information',
+      )
+
   #************************************************************
   #* Plot *****************************************************
 
@@ -209,9 +289,10 @@ class Experiment:
   #* Utils ****************************************************
 
   def loadPcap(self):
-    print(f'[{self.fbase}.loadPcap]')
-    fpath = utils.pcapPath(self.fbase)
-    self.pcap = scapy.rdpcap(fpath)
+    if not hasattr(self, 'pcap') or self.pcap is None:
+      print(f'[{self.fbase}.loadPcap]')
+      fpath = utils.pcapPath(self.fbase)
+      self.pcap = scapy.rdpcap(fpath)
     return self
 
   def savePcap(self):
