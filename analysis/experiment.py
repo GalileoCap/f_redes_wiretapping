@@ -103,6 +103,7 @@ class Experiment:
     print(f'[{self.fbase}.report]')
 
     self.reportOverall()
+    self.reportCounts()
     self.reportHITime()
 
     return self
@@ -110,6 +111,60 @@ class Experiment:
   def reportOverall(self):
     H = (self.symbolsDf['p'] * self.symbolsDf['information']).sum()
     print(self.symbolsDf, f'Tramas: {self.symbolsDf["count"].sum()}', f'Entropy: {H}', sep = '\n')
+    self.reportPct()
+    self.reportInformation()
+
+  def reportPct(self):
+    fig = px.bar(
+      self.symbolsDf.sort_values('p', ascending = False),
+      x = 'symbol',
+      y = 'p',
+    )
+    fig.update_layout(
+      # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
+      xaxis_title = 'Symbol',
+      yaxis_title = '% of total packets',
+    )
+    fig.write_image(utils.imgPath(self.fbase, 'pct'))
+
+  def reportInformation(self):
+    fig = px.bar(
+      self.symbolsDf.sort_values('information', ascending = False),
+      x = 'symbol',
+      y = 'information',
+    )
+    fig.update_layout(
+      # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
+      xaxis_title = 'Symbol',
+      yaxis_title = 'Information',
+    )
+    fig.write_image(utils.imgPath(self.fbase, 'information'))
+
+  def reportCounts(self):
+    df = self.pcapDf.apply(
+      lambda row: pd.Series({
+        symbol: int(symbol == row['symbol'])
+        for symbol in self.symbolsDf['symbol']
+      }),
+      axis = 'columns'
+    )
+    df['total_count'] = df.index + 1
+    for symbol in self.symbolsDf['symbol']:
+      df[f'{symbol}_count'] = df[symbol].cumsum()
+      df[f'{symbol}_p'] = df[f'{symbol}_count'] / df['total_count']
+    fig = go.Figure()
+    for symbol in self.symbolsDf['symbol']:
+      fig.add_trace(go.Scatter(
+        # x = ,
+        y = df[f'{symbol}_count'],
+        name = symbol,
+      ))
+    fig.update_layout(
+      # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
+      xaxis_title = 'Time', # TODO: Not time
+      yaxis_title = 'Count of packets',
+    )
+    fig.write_image(utils.imgPath(self.fbase, 'counts'))
 
   def reportHITime(self):
     # H and I (per type), over time
