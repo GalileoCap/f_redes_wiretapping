@@ -18,6 +18,8 @@ def dfPath(fbase, name):
   return os.path.join(experimentPath(fbase), f'{name}.csv.tar.gz')
 def pcapPath(fbase):
   return os.path.join(INDIR, f'{fbase}.pcap')
+def imgPath(fbase, name):
+  return os.path.join(experimentPath(fbase), f'{name}.png')
 
 def saveDf(df, fpath):
   fpath = dfPath(fpath)

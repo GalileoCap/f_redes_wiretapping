@@ -3,6 +3,10 @@ import scapy.all as scapy
 import pandas as pd
 import numpy as np
 
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+
 from datetime import datetime
 import sys
 import os
@@ -63,6 +67,7 @@ class Experiment:
 			}
       for pkt in self.pcap
     ])
+    self.pcapDf['symbol'] = '(' + self.pcapDf['dire'] + ', ' + self.pcapDf['proto'] + ')'
 
     if save:
       self.pcapDf.to_csv(fpath)
@@ -75,15 +80,14 @@ class Experiment:
       self.symbolsDf = pd.read_csv(fpath, index_col = 0)
       return
 
-    symbols = '(' + self.pcapDf['dire'] + ', ' + self.pcapDf['proto'] + ')'
-    counts = symbols.value_counts()
+    counts = self.pcapDf['symbol'].value_counts()
     self.symbolsDf = pd.DataFrame([
       {
         'symbol': symbol, 
         'p': counts[symbol] / len(self.pcapDf),
         'count': counts[symbol]
       }
-      for symbol in list(symbols.unique())
+      for symbol in list(self.pcapDf['symbol'].unique())
     ])
     self.symbolsDf['information'] = -np.log2(self.symbolsDf['p'])
     
@@ -97,11 +101,56 @@ class Experiment:
   def report(self):
     print(f'[{self.fbase}.report]')
 
-    H = (self.symbolsDf['p'] * self.symbolsDf['information']).sum()
-    print(self.symbolsDf, f'Tramas: {self.symbolsDf["count"].sum()}', f'Entropy: {H}', sep = '\n')
-		#TODO: Graphs
+    self.reportOverall()
+    self.reportHITime()
 
     return self
+
+  def reportOverall(self):
+    H = (self.symbolsDf['p'] * self.symbolsDf['information']).sum()
+    print(self.symbolsDf, f'Tramas: {self.symbolsDf["count"].sum()}', f'Entropy: {H}', sep = '\n')
+
+  def reportHITime(self):
+    # H and I (per type), over time
+    # TODO: Optimize
+    symbols = {symbol: {'count': 0, 'p': 0, 'I': 0} for symbol in self.symbolsDf['symbol']}
+    H = []
+    def foo(row):
+      symbolState = symbols[row['symbol']]
+      symbolState['count'] += 1
+      symbolState['p'] = symbolState['count'] / sum([state['count'] for _, state in symbols.items()])
+      symbolState['I'] = -np.log2(symbolState['p'])
+
+      H.append(sum([
+        state['p'] * state['I']
+        for _, state in symbols.items()
+      ]))
+      res = {}
+      for symbol, state in symbols.items():
+        res[f'{symbol}_count'] = state['count']
+        res[f'{symbol}_p'] = state['p']
+        res[f'{symbol}_I'] = state['I']
+      return pd.Series(res)
+
+    df = self.pcapDf.apply(foo, axis = 'columns')
+    fig = go.Figure()
+    for symbol in self.symbolsDf['symbol']:
+      fig.add_trace(go.Scatter(
+        # x = ,
+        y = df[f'{symbol}_I'],
+        name = symbol,
+      ))
+    fig.add_trace(go.Scatter(
+      # x = ,
+      y = H,
+      name = 'H',
+    ))
+    fig.update_layout(
+      # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
+      xaxis_title = 'Time', # TODO: Not time
+      yaxis_title = 'Information',
+    )
+    fig.write_image(utils.imgPath(self.fbase, 'hitime'))
   
   #************************************************************
   #* Utils ****************************************************
