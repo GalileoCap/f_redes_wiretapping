@@ -117,7 +117,7 @@ class Experiment:
         'op': "whois" if pkt[scapy.ARP].op == 1 else "reply",
       }
       for pkt in self.pcap
-      if pkt[scapy.Ether].type == 0x0806 # Is ARP
+      if pkt.haslayer(scapy.Ether) and pkt[scapy.Ether].type == 0x0806 # Is ARP
     ])
     
     if save:
@@ -166,8 +166,10 @@ class Experiment:
   def reportOverall(self):
     H = (self.symbolsDf['p'] * self.symbolsDf['information']).sum()
     print(self.symbolsDf, f'Tramas: {self.symbolsDf["count"].sum()}', f'Entropy: {H}', sep = '\n')
+
     self.reportPct()
     self.reportInformation()
+    self.reportBroadcast()
 
   def reportPct(self):
     self.plotBar(
@@ -179,6 +181,16 @@ class Experiment:
     self.plotBar(
       self.symbolsDf, 'symbol', 'information',
       name = 'info', title = 'Information', xaxis_title = 'Symbol', yaxis_title = 'Information',
+    )
+
+  def reportBroadcast(self):
+    counts = self.pcapDf['dire'].value_counts()
+    df = pd.DataFrame(counts)
+    df['type'] = df.index
+    df['p'] = df['count'] / counts.sum()
+    self.plotBar(
+      df, 'type', 'p',
+      name = 'unibroadcast', title = 'Unibroadcast', xaxis_title = 'Tipo', yaxis_title = '% de los paquetes',
     )
 
   def reportCounts(self):
@@ -224,6 +236,10 @@ class Experiment:
     # print()
     # print(self.optDf['op'].value_counts()
     # print()
+    if len(self.optDf) == 0:
+      print('[reportOpt] No ARP data')
+      return
+
     _counts = self.optDf['pdst'].value_counts() + self.optDf['psrc'].value_counts()
     _counts.dropna(inplace = True)
     _df = pd.DataFrame()
