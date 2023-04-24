@@ -22,6 +22,9 @@ def imgPath(fbase, name):
   return os.path.join(experimentPath(fbase), f'{name}.png')
 def htmlPath(fbase, name):
   return os.path.join(experimentPath(fbase), f'{name}.html')
+def mdPath(fbase, name):
+  return os.path.join(experimentPath(fbase), f'{name}.md')
+
 
 def saveDf(df, fpath):
   fpath = dfPath(fpath)

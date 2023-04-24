@@ -156,16 +156,27 @@ class Experiment:
   def report(self):
     print(f'[{self.fbase}.report]')
 
+    self.reportMsg = f'# Report for **{self.fbase}**'
+
     self.reportOverall()
     self.reportCounts()
     self.reportHITime()
     self.reportOpt()
 
+    print(self.reportMsg)
+    with open(utils.mdPath(self.fbase, 'report'), 'w') as fout:
+      fout.write(self.reportMsg)
+
     return self
 
   def reportOverall(self):
     H = (self.symbolsDf['p'] * self.symbolsDf['information']).sum()
-    print(self.symbolsDf, f'Tramas: {self.symbolsDf["count"].sum()}', f'Entropy: {H}', sep = '\n')
+
+    self.addReport('Overall', [
+        f'Tramas: {len(self.pcapDf)}',
+        f'Entropy: {H}',
+        '\n' + self.symbolsDf.sort_values("information", ascending = False).to_string(index = False)
+    ])
 
     self.reportPct()
     self.reportInformation()
@@ -228,16 +239,8 @@ class Experiment:
     utils.saveFig(fig, self.fbase, 'hitime')
 
   def reportOpt(self):
-    # print(self.optDf.tail())
-    # print()
-    # print(self.optDf['psrc'].value_counts())
-    # print()
-    # print(self.optDf['pdst'].value_counts())
-    # print()
-    # print(self.optDf['op'].value_counts()
-    # print()
     if len(self.optDf) == 0:
-      print('[reportOpt] No ARP data')
+      self.addReport('Optional', ['NO ARP DATA'])
       return
 
     _counts = self.optDf['pdst'].value_counts() + self.optDf['psrc'].value_counts()
@@ -247,8 +250,12 @@ class Experiment:
     _df['symbol'] = _counts.index
     _df['p'] = _counts / _counts.sum()
     _df['information'] = -np.log2(_df['p'])
-    print(_df)
-    print()
+    _df.sort_values('information', ascending = True, inplace = True)
+
+    self.addReport('Optional', [
+      f'Hosts:\n{_df[["information"]].head()}',
+      f'Predicted router: {_df.iloc[0]["symbol"]}'
+    ])
 
     self.plotBar(
       _df, 'symbol', 'p',
@@ -316,3 +323,8 @@ class Experiment:
 
   def mkDir(self):
     os.makedirs(utils.experimentPath(self.fbase), exist_ok = True)
+
+  def addReport(self, title, info):
+    #TODO: Correctly format df
+    lines = '\n'.join([f'* {line}' for line in info])
+    self.reportMsg += f'\n\n## {title}\n{lines}'
