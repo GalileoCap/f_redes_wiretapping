@@ -48,6 +48,7 @@ class Experiment:
   
     self.getPcapDf(save, load)
     self.getSymbolsDf(save, load)
+    self.getFooDf(save, load)
     self.getOptDf(save, load)
 
     return self
@@ -59,6 +60,7 @@ class Experiment:
       return
 
     self.loadPcap()
+    # self.pcap = self.pcap[:min(20000, len(self.pcap))]
     start_time = self.pcap[0].time
     self.pcapDf = pd.DataFrame([
 			{
@@ -122,9 +124,6 @@ class Experiment:
       self.optDf.to_csv(fpath)
 
   def getFooDf(self, save = True, load = True):
-    if hasattr(self, 'fooDf') and not self.fooDf is None:
-      return
-
     fpath = utils.dfPath(self.fbase, 'foo')
     if load and os.path.isfile(fpath):
       self.fooDf = pd.read_csv(fpath, index_col = 0)
@@ -183,7 +182,6 @@ class Experiment:
     )
 
   def reportCounts(self):
-    self.getFooDf()
     fig = go.Figure()
     for symbol in self.symbolsDf['symbol']:
       fig.add_trace(go.Scatter(
@@ -199,7 +197,6 @@ class Experiment:
 
   def reportHITime(self):
     # H and I (per type), over time
-    self.getFooDf()
 
     fig = go.Figure()
     for symbol in self.symbolsDf['symbol']:
