@@ -69,6 +69,7 @@ class Experiment:
 				'dt': pkt.time - start_time,
 			}
       for pkt in self.pcap
+      if pkt.haslayer(scapy.Ether)
     ])
     self.pcapDf['symbol'] = '(' + self.pcapDf['dire'] + ', ' + self.pcapDf['proto'] + ')'
 
@@ -185,13 +186,13 @@ class Experiment:
   def reportPct(self):
     self.plotBar(
       self.symbolsDf, 'symbol', 'p',
-      name = 'pct', title = 'pct', xaxis_title = 'Symbol', yaxis_title = '% of total packets',
+      name = 'pct', title = '', xaxis_title = 'Símbolo', yaxis_title = '% de los paquetes',
     )
 
   def reportInformation(self):
     self.plotBar(
       self.symbolsDf, 'symbol', 'information',
-      name = 'info', title = 'Information', xaxis_title = 'Symbol', yaxis_title = 'Information',
+      name = 'info', title = '', xaxis_title = 'Símbolo', yaxis_title = 'Información',
     )
 
   def reportBroadcast(self):
@@ -201,7 +202,7 @@ class Experiment:
     df['p'] = df['count'] / counts.sum()
     self.plotBar(
       df, 'type', 'p',
-      name = 'unibroadcast', title = 'Unibroadcast', xaxis_title = 'Tipo', yaxis_title = '% de los paquetes',
+      name = 'unibroadcast', title = '', xaxis_title = 'Tipo', yaxis_title = '% de los paquetes',
     )
 
   def reportCounts(self):
@@ -213,14 +214,12 @@ class Experiment:
       ))
     fig.update_layout(
       # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
-      xaxis_title = 'Time', # TODO: Not time
-      yaxis_title = 'Count of packets',
+      xaxis_title = 'Cantidad de paquetes',
+      yaxis_title = 'Cantidad de paquetes de cada símbolo',
     )
     utils.saveFig(fig, self.fbase, 'counts')
 
   def reportHITime(self):
-    # H and I (per type), over time
-
     fig = go.Figure()
     for symbol in self.symbolsDf['symbol']:
       fig.add_trace(go.Scatter(
@@ -233,10 +232,24 @@ class Experiment:
     ))
     fig.update_layout(
       # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
-      xaxis_title = 'Time', # TODO: Not time
-      yaxis_title = 'Information',
+      xaxis_title = 'Cantidad de paquetes',
+      yaxis_title = 'Información',
     )
     utils.saveFig(fig, self.fbase, 'hitime')
+
+    self.reportH()
+
+  def reportH(self):
+    fig = go.Figure(go.Scatter(
+      y = self.fooDf['H'],
+      name = 'H',
+    ))
+    fig.update_layout(
+      # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
+      xaxis_title = 'Cantidad de paquetes',
+      yaxis_title = 'Entropía',
+    )
+    utils.saveFig(fig, self.fbase, 'h')
 
   def reportOpt(self):
     if len(self.optDf) == 0:
@@ -259,11 +272,11 @@ class Experiment:
 
     self.plotBar(
       _df, 'symbol', 'p',
-      name = f'opt_pct_F', title = f'opt_pct_F', xaxis_title = 'Symbol', yaxis_title = '% of total packets',
+      name = f'opt_pct_F', title = f'', xaxis_title = 'Símbolo', yaxis_title = '% de los paquetes',
     )
     self.plotBar(
       _df, 'symbol', 'information',
-      name = f'opt_info_F', title = f'opt_info_F', xaxis_title = 'Symbol', yaxis_title = 'Information',
+      name = f'opt_info_F', title = f'', xaxis_title = 'Símbolo', yaxis_title = 'Información',
     )
 
     self.optDf['symbol_src'] = '(' + self.optDf['psrc'] + ', ' + self.optDf['op'] + ')'
@@ -285,11 +298,11 @@ class Experiment:
       df['information'] = -np.log2(df['p'])
       self.plotBar(
         df, 'symbol', 'p',
-        name = f'opt_pct_{v}', title = f'opt_pct_{v}', xaxis_title = 'Symbol', yaxis_title = '% of total packets',
+        name = f'opt_pct_{v}', title = '', xaxis_title = 'Símbolo', yaxis_title = '% de los paquetes',
       )
       self.plotBar(
         df, 'symbol', 'information',
-        name = f'opt_info_{v}', title = f'opt_info_{v}', xaxis_title = 'Symbol', yaxis_title = 'Information',
+        name = f'opt_info_{v}', title = '', xaxis_title = 'Símbolo', yaxis_title = 'Información',
       )
 
   #************************************************************
