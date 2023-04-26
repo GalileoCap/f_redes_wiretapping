@@ -172,10 +172,11 @@ class Experiment:
 
   def reportOverall(self):
     H = (self.symbolsDf['p'] * self.symbolsDf['information']).sum()
+    H_max = np.log2(len(self.symbolsDf))
 
     self.addReport('Overall', [
         f'Tramas: {len(self.pcapDf)}',
-        f'Entropy: {H}',
+        f'Entropy: {H} (max {H_max})',
         '\n' + self.symbolsDf.sort_values("information", ascending = False).to_string(index = False)
     ])
 
@@ -265,8 +266,12 @@ class Experiment:
     _df['information'] = -np.log2(_df['p'])
     _df.sort_values('information', ascending = True, inplace = True)
 
+    H = (_df['p'] * _df['information']).sum()
+    H_max = np.log2(len(_df))
+
     self.addReport('Optional', [
       f'Hosts:\n{_df[["information"]].head()}',
+      f'Entropy: {H} (max {H_max})',
       f'Predicted router: {_df.iloc[0]["symbol"]}'
     ])
 
