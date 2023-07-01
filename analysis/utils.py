@@ -19,7 +19,7 @@ def dfPath(fbase, name):
 def pcapPath(fbase):
   return os.path.join(INDIR, f'{fbase}.pcap')
 def imgPath(fbase, name):
-  return os.path.join(experimentPath(fbase), f'{name}.png')
+  return os.path.join(experimentPath(fbase), f'{name}.pdf')
 def htmlPath(fbase, name):
   return os.path.join(experimentPath(fbase), f'{name}.html')
 def mdPath(fbase, name):
@@ -48,6 +48,7 @@ def loadDf(fpath):
 def saveFig(fig, fbase, name):
   fig.write_html(htmlPath(fbase, name))
   fig.write_image(imgPath(fbase, name))
+  fig.write_image(imgPath(fbase, name)) # Do it a second time, wasteful but a quick solution for plotly's pdf error
 
 def dfExists(fbase, name):
   return os.path.isfile(dfPath(fbase, name))
