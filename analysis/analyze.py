@@ -5,6 +5,18 @@ import os
 from experiment import Experiment
 import utils
 
+def analyze(user, name, load):
+  return Experiment(user, name).process(load = load).report()
+
+def analyzeAll(load):
+  exps = []
+  for fpath in os.listdir(utils.INDIR):
+    user, rest = fpath.split('_', maxsplit = 1)
+    name, _ = rest.split('.', maxsplit = 1)
+    exps.append(analyze(user, name, load))
+
+  return exps
+
 if __name__ == '__main__':
   parser = ArgumentParser(
     prog = 'analyze',
@@ -18,11 +30,5 @@ if __name__ == '__main__':
   args.force = bool(args.force)
 
   if args.all:
-    for fpath in os.listdir(utils.INDIR):
-      user, rest = fpath.split('_', maxsplit = 1)
-      name, _ = rest.split('.', maxsplit = 1)
-      experiment = Experiment(user, name)
-      experiment.process(load = not args.force).report()
-  else:
-    experiment = Experiment(*args.experiment)
-    experiment.process(load = not args.force).report()
+    analyzeAll(not args.force)
+  else: analyze(*args.experiment, not args.force)

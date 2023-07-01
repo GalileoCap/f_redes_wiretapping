@@ -346,3 +346,6 @@ class Experiment:
     #TODO: Correctly format df
     lines = '\n'.join([f'* {line}' for line in info])
     self.reportMsg += f'\n\n## {title}\n{lines}'
+
+  def __repr__(self):
+    return f'Experiment<{self.user}, {self.name}>'
