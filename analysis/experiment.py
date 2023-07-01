@@ -193,7 +193,7 @@ class Experiment:
   def reportInformation(self):
     self.plotBar(
       self.symbolsDf, 'symbol', 'information',
-      name = 'info', title = '', xaxis_title = 'Símbolo', yaxis_title = 'Información',
+      name = 'info', title = f'Información por símbolo en la red {utils.cleanUser(self.user)} en el contexto "{utils.cleanName(self.name)}"', xaxis_title = 'Símbolo', yaxis_title = 'Información',
     )
 
   def reportBroadcast(self):
@@ -218,7 +218,7 @@ class Experiment:
       xaxis_title = 'Cantidad de paquetes',
       yaxis_title = 'Cantidad de paquetes de cada símbolo',
     )
-    utils.saveFig(fig, self.fbase, 'counts')
+    self.saveFig(fig, 'counts')
 
   def reportHITime(self):
     fig = go.Figure()
@@ -236,7 +236,7 @@ class Experiment:
       xaxis_title = 'Cantidad de paquetes',
       yaxis_title = 'Información',
     )
-    utils.saveFig(fig, self.fbase, 'hitime')
+    self.saveFig(fig, 'hitime')
 
     self.reportH()
 
@@ -246,11 +246,13 @@ class Experiment:
       name = 'H',
     ))
     fig.update_layout(
-      # title = f'Relación entre el tiempo resolver y el tiempo para calcular LU ({reps} reps)',
+      title = 'Entropía de la red {utils.cleanUser(self.user)} en el contexto "{utils.cleanName(self.name)}"',
       xaxis_title = 'Cantidad de paquetes',
       yaxis_title = 'Entropía',
+
+      xaxis_range = [0, utils.hmaxX(self.name)],
     )
-    utils.saveFig(fig, self.fbase, 'h')
+    self.saveFig(fig, 'h')
 
   def reportOpt(self):
     if len(self.optDf) == 0:
@@ -321,8 +323,11 @@ class Experiment:
     fig.update_layout(
       title = title, xaxis_title = xaxis_title, yaxis_title = yaxis_title, 
     )
-    utils.saveFig(fig, self.fbase, name)
-  
+    self.saveFig(fig, name)
+
+  def saveFig(self, fig, name):
+    return utils.saveFig(fig, self.fbase, f'{self.fbase}_{name}')
+
   #************************************************************
   #* Utils ****************************************************
 

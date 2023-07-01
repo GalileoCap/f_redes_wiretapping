@@ -55,6 +55,39 @@ def dfExists(fbase, name):
 def pcapExists(fbase):
   return os.path.isfile(pcapPath(fbase))
 
+def cleanName(name):
+  if name == 'busy_150K':
+    name = 'busy'
+
+  d = {
+    'baseline': 'Hands-off',
+    'comun': 'Uso común',
+    'boot': 'Boot',
+    'busy': 'Busy',
+  }
+  return d.get(name, name)
+
+def cleanUser(user):
+  d = {
+    'LP': 'Red 1',
+    'JB': 'Red 2',
+    'martin': 'Red 3',
+    'galileo': 'Red 4',
+  }
+  return d.get(user, f'Red {user}')
+
+def hmaxX(name):
+  if name == 'busy_150K':
+    name = 'busy'
+
+  d = {
+    'baseline': 4195,
+    'comun': 20378,
+    'boot': 3392,
+    'busy': 29120,
+  }
+  return d[name]
+
 #************************************************************
 #* Ethertypes ***********************************************
 # SEE: https://github.com/secdev/scapy/blob/master/scapy/libs/ethertypes.py
